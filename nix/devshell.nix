@@ -116,6 +116,36 @@ in
         help = "format Rust only (cargo fmt)";
         command = "cargo fmt --all";
       }
+      # TOML
+      {
+        name = "fmt:toml";
+        help = "format TOML (taplo)";
+        command = "taplo fmt .";
+      }
+      # Lua
+      {
+        name = "fmt:lua";
+        help = "format Lua (stylua)";
+        command = "stylua .";
+      }
+      # JS/TS/HTML/CSS
+      {
+        name = "fmt:web";
+        help = "format JS/TS/HTML/CSS (biome)";
+        command = "${pkgs.biome}/bin/biome format --write .";
+      }
+      # Shell
+      {
+        name = "fmt:sh";
+        help = "format shell (shellharden)";
+        command = "${pkgs.shellharden}/bin/shellharden -i (fd -e sh -e bash)";
+      }
+      # Fish
+      {
+        name = "fmt:fish";
+        help = "format fish scripts";
+        command = "fd -e fish -X ${pkgs.fish}/bin/fish_indent --write";
+      }
 
       {
         name = "check";

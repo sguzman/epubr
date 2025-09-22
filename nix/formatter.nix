@@ -1,24 +1,49 @@
-# nix/formatter.nix
-# Must evaluate to a *derivation*, not a module/attrset.
-# This uses treefmt-nix and *wraps* treefmt with the config.
 {
   pkgs,
   inputs,
-  system,
   ...
 }: let
-  # Evaluate a treefmt module (Nix-side config)
+  biomeCmd = "${pkgs.biome}/bin/biome";
+  shellhardenCmd = "${pkgs.shellharden}/bin/shellharden";
+  fishIndentCmd = "${pkgs.fish}/bin/fish_indent";
+
   tf = inputs.treefmt-nix.lib.evalModule pkgs {
-    # Consider repo root
     projectRootFile = "flake.nix";
 
-    # Enable Nix & Rust formatters
-    programs.alejandra.enable = true; # <-- Alejandra installed via treefmt-nix
-    programs.rustfmt.enable = true;
+    programs = {
+      alejandra.enable = true; # already had
+      rustfmt.enable = true; # already had
+      taplo.enable = true; # TOML
+      stylua.enable = true; # Lua
+    };
 
-    # (Optional) keep these minimal; treefmt auto-discovers files
-    settings.global.excludes = ["./result/*" "./target/*"];
+    settings = {
+      global.excludes = [
+        "./git/*"
+        "./result/*"
+        "./target/*"
+      ];
+
+      formatter = {
+        biome = {
+          command = biomeCmd;
+          options = ["format" "--write"];
+          includes = ["*.js" "*.cjs" "*.mjs" "*.jsx" "*.ts" "*.tsx" "*.html" "*.css"];
+        };
+
+        shellharden = {
+          command = shellhardenCmd;
+          options = ["-i"];
+          includes = ["*.sh" "*.bash"];
+        };
+
+        fish-indent = {
+          command = fishIndentCmd;
+          options = ["--write"];
+          includes = ["*.fish"];
+        };
+      };
+    };
   };
 in
-  # Return the wrapper derivation that `nix fmt` will run
   tf.config.build.wrapper
