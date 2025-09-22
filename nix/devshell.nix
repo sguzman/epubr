@@ -4,7 +4,6 @@
   perSystem,
   ...
 }: let
-  # Single source of truth for tools in the shell
   toolPkgs = with pkgs; [
     fish
     cargo
@@ -19,29 +18,23 @@
     alejandra
   ];
 
-  # Render a clean "name version" line for each tool from Nix metadata.
-  # Falls back if `pname`/`version` are missing.
   fmtPkg = p: let
-    hasPN = p ? pname;
     pn =
-      if hasPN
+      if p ? pname
       then p.pname
       else (p.name or "pkg");
     ver =
       if p ? version
       then p.version
       else "";
-    line =
+    lbl =
       if ver == ""
-      then "• ${pn}"
-      else "• ${pn} ${ver}";
-  in
-    "        " + line;
+      then "${pn}"
+      else "${pn} ${ver}";
+  in ''echo "        • ${lbl}"'';
 
-  packagesSummary =
-    builtins.concatStringsSep "\n" (map fmtPkg toolPkgs);
+  packagesSummaryFish = builtins.concatStringsSep "\n" (map fmtPkg toolPkgs);
 
-  # Banner script for fish; prints dynamic packages + the devshell menu
   banner = pkgs.writeText "epubr-banner.fish" ''
         function fish_greeting
           set_color -o cyan
@@ -49,28 +42,31 @@
           set_color normal
 
           # Where & who
-          set_color brwhite; echo ""; echo "Project:"; set_color normal
+          set_color brwhite; echo; echo "Project:"; set_color normal
           echo "  • PWD     → "(pwd)
           if command -q git
-            echo "  • branch  → "(git rev-parse --abbrev-ref HEAD ^/dev/null)
+            if git rev-parse --is-inside-work-tree 2>/dev/null
+              echo -n "  • branch  → "
+              git rev-parse --abbrev-ref HEAD 2>/dev/null
+            end
           end
 
-          # Packages come from Nix metadata (auto-updates when you change toolPkgs)
-          set_color brwhite; echo ""; echo "Packages (from Nix):"; set_color normal
-    ${packagesSummary}
+          # Packages (auto-generated from Nix)
+          set_color brwhite; echo; echo "Packages (from Nix):"; set_color normal
+    ${packagesSummaryFish}
 
-          # Shortcuts = devshell commands; `menu` is dynamic
-          set_color brwhite; echo ""; echo "Menu (devshell commands):"; set_color normal
+          # Dynamic commands menu
+          set_color brwhite; echo; echo "Menu (devshell commands):"; set_color normal
           if type -q menu
             menu
           else
             echo "  (menu unavailable)"
           end
 
-          echo ""
+          echo
           set_color brwhite; echo "Tip:"; set_color normal
           echo "  • Run 'devhelp' anytime to reprint this banner."
-          echo ""
+          echo
         end
 
         # Reprint on demand
@@ -80,16 +76,13 @@
   '';
 in
   perSystem.devshell.mkShell {
-    # Use the same list for the actual devshell packages (stays in sync)
     packages = toolPkgs;
 
-    # Auto-enter fish and source the banner script before the prompt appears
+    # Source the banner file, then start fish
     devshell.interactive.fish.text = "exec ${pkgs.fish}/bin/fish -C 'source ${banner}'";
 
-    # Keep devshell’s own MOTD quiet; fish prints our banner
     motd = "";
 
-    # Commands (menu is auto-generated from here)
     commands = [
       {
         name = "devhelp";
@@ -108,7 +101,6 @@ in
         command = "cargo run --";
       }
 
-      # formatters
       {
         name = "fmt";
         help = "format Nix + Rust (treefmt: alejandra+rustfmt)";
@@ -136,7 +128,6 @@ in
         command = "cargo test";
       }
 
-      # linters
       {
         name = "lint:nix";
         help = "Nix lint: statix + deadnix";
