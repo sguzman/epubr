@@ -90,6 +90,16 @@ in
         command = "nix fmt";
       }
       {
+        name = "fmt:nix";
+        help = "format Nix only (Alejandra)";
+        command = "alejandra .";
+      }
+      {
+        name = "fmt:rust";
+        help = "format Rust only (cargo fmt)";
+        command = "cargo fmt --all";
+      }
+      {
         name = "check";
         help = "cargo check (all targets)";
         command = "cargo check --all-targets";
