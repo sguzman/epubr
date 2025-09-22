@@ -5,13 +5,18 @@
   system,
   ...
 }: let
-  naersk = inputs.naersk.lib."${system}";
+  naersk = inputs.naersk.lib.${system};
 in
   naersk.buildPackage {
-    pname = "epubr";
-    version = "0.1.0";
-    src = ../../..; # repo root
-    cargoBuildOptions = x: x ++ ["--locked"];
+    # Let naersk read package.name + package.version from Cargo.toml
+    src = ../../..; # repo root with Cargo.toml/Cargo.lock
+
+    cargoBuildOptions = opts: opts ++ ["--locked"];
+
     nativeBuildInputs = with pkgs; [pkg-config];
     buildInputs = with pkgs; [openssl];
+
+    # optional toggles you might want later:
+    # doCheck = true;           # runs `cargo test` during build
+    # CARGO_PROFILE = "release";
   }
