@@ -1,34 +1,31 @@
 {
-  description = "epub-indexer (Rust) with Blueprint, devshell, naersk, treefmt";
+  description = "epubr — EPUB indexer (Rust) using Blueprint";
 
   inputs = {
+    # Stable
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-25.05";
 
-    # Blueprint: discovers files in nix/ and wires outputs
+    # Blueprint (keeps flake tiny; maps folders->outputs)
     blueprint.url = "github:numtide/blueprint";
     blueprint.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Devshell (menu, services, etc.)
-    devshell.url = "github:numtide/devshell";
-    devshell.inputs.nixpkgs.follows = "nixpkgs";
-
-    # Build Rust
+    # Rust build
     naersk.url = "github:nix-community/naersk";
     naersk.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Formatter orchestrator (makes `nix fmt` run alejandra + rustfmt)
+    # Formatter orchestrator: makes `nix fmt` work (Alejandra + rustfmt)
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
 
-    systems.url = "github:nix-systems/default"; # default set of systems
+    # Common systems list
+    systems.url = "github:nix-systems/default";
   };
 
+  # Hand control to Blueprint; scan ./nix for modules
   outputs = inputs:
     inputs.blueprint {
       inherit inputs;
-      prefix = "nix/";         # look under nix/ for devshell, packages, formatter, etc.
-      systems = inputs.systems; # optional explicit systems (good default)
-      # You can also set nixpkgs.config.allowUnfree = true; here if needed
+      prefix = "nix/"; # look under ./nix
+      systems = inputs.systems; # multi-system ready
     };
 }
-
