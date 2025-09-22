@@ -4,7 +4,6 @@
   perSystem,
   ...
 }: let
-  # A tiny fish script that prints your banner via fish_greeting
   banner = pkgs.writeText "epubr-banner.fish" ''
     function fish_greeting
       set_color -o cyan
@@ -41,6 +40,11 @@
 
       echo
     end
+
+    # Reprint the banner on demand
+    function devhelp
+      fish_greeting
+    end
   '';
 in
   perSystem.devshell.mkShell {
@@ -65,6 +69,11 @@ in
     motd = "";
 
     commands = [
+      {
+        name = "devhelp";
+        help = "reprint this banner/help";
+        command = "devhelp";
+      }
       {
         name = "build";
         help = "nix build .#epubr";
