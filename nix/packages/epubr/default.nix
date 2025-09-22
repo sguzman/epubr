@@ -1,13 +1,17 @@
+# nix/packages/epubr/default.nix
 {
   pkgs,
   inputs,
+  system,
   ...
 }: let
-  naersk = pkgs.callPackage inputs.naersk {};
+  naersk = inputs.naersk.lib."${system}";
 in
   naersk.buildPackage {
     pname = "epubr";
-    src = ../../..; # repo root (where Cargo.toml lives)
-    # Enable when you add tests:
-    # doCheck = true;
+    version = "0.1.0";
+    src = ../../..; # repo root
+    cargoBuildOptions = x: x ++ ["--locked"];
+    nativeBuildInputs = with pkgs; [pkg-config];
+    buildInputs = with pkgs; [openssl];
   }
