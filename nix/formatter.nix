@@ -1,25 +1,14 @@
-{
-  pkgs,
-  inputs,
-  ...
-}: {
-  # Integrate treefmt-nix module and define formatters
-  perSystem = {
-    config,
-    self',
-    pkgs,
-    ...
-  }: {
+{inputs, ...}: {
+  perSystem = {pkgs, ...}: {
     imports = [inputs.treefmt-nix.flakeModule];
 
     treefmt = {
-      # Enable as flake formatter => `nix fmt` works
-      flakeFormatter = true;
-      flakeCheck = true; # adds a check to `nix flake check`
+      # Use treefmt as the flake formatter => `nix fmt` works
+      flakeFormatter = true; # (default is true; being explicit)
 
       programs = {
-        alejandra.enable = true; # format *.nix
-        rustfmt.enable = true; # format Rust
+        alejandra.enable = true; # formats *.nix (from nixpkgs)
+        rustfmt.enable = true; # formats Rust
       };
     };
   };
