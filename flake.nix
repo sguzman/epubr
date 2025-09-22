@@ -33,6 +33,7 @@
       # <- IMPORTANT: we’re using the prefixed layout
       prefix = "nix/";
       # Let Blueprint pick systems from the input set (or override explicitly)
-      systems = import inputs.systems;
+      #systems = [ inputs.systems ];
+      systems = [ "86_64-linux" ];
     };
 }
