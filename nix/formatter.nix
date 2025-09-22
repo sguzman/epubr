@@ -1,49 +1,58 @@
-{
-  pkgs,
-  inputs,
-  ...
-}: let
-  biomeCmd = "${pkgs.biome}/bin/biome";
-  shellhardenCmd = "${pkgs.shellharden}/bin/shellharden";
-  fishIndentCmd = "${pkgs.fish}/bin/fish_indent";
+# nix/formatter.nix
+{inputs, ...}: {
+  # Module-style integration: import treefmt-nix's flakeModule
+  perSystem = {pkgs, ...}: {
+    imports = [inputs.treefmt-nix.flakeModule];
 
-  tf = inputs.treefmt-nix.lib.evalModule pkgs {
-    projectRootFile = "flake.nix";
+    treefmt = {
+      # Wire up flake outputs automatically
+      flakeFormatter = true; # `nix fmt`
+      flakeCheck = true; # `nix flake check` includes formatting check
 
-    programs = {
-      alejandra.enable = true; # already had
-      rustfmt.enable = true; # already had
-      taplo.enable = true; # TOML
-      stylua.enable = true; # Lua
-    };
+      # Built-in formatters
+      programs = {
+        alejandra.enable = true; # *.nix
+        rustfmt.enable = true; # Rust
+        taplo.enable = true; # TOML
+        stylua.enable = true; # Lua
+      };
 
-    settings = {
-      global.excludes = [
-        "./git/*"
-        "./result/*"
-        "./target/*"
-      ];
+      # Extra formatters (custom)
+      settings = {
+        global.excludes = ["./result/*" "./target/*"];
 
-      formatter = {
-        biome = {
-          command = biomeCmd;
-          options = ["format" "--write"];
-          includes = ["*.js" "*.cjs" "*.mjs" "*.jsx" "*.ts" "*.tsx" "*.html" "*.css"];
-        };
+        formatter = {
+          # Biome for JS/TS/TSX/JSX/HTML/CSS
+          biome = {
+            command = "${pkgs.biome}/bin/biome";
+            options = ["format" "--write"];
+            includes = [
+              "*.js"
+              "*.cjs"
+              "*.mjs"
+              "*.jsx"
+              "*.ts"
+              "*.tsx"
+              "*.html"
+              "*.css"
+            ];
+          };
 
-        shellharden = {
-          command = shellhardenCmd;
-          options = ["-i"];
-          includes = ["*.sh" "*.bash"];
-        };
+          # shellharden (in-place rewrite) for shell scripts
+          shellharden = {
+            command = "${pkgs.shellharden}/bin/shellharden";
+            options = ["-i"];
+            includes = ["*.sh" "*.bash"];
+          };
 
-        fish-indent = {
-          command = fishIndentCmd;
-          options = ["--write"];
-          includes = ["*.fish"];
+          # fish formatter
+          "fish-indent" = {
+            command = "${pkgs.fish}/bin/fish_indent";
+            options = ["--write"];
+            includes = ["*.fish"];
+          };
         };
       };
     };
   };
-in
-  tf.config.build.wrapper
+}
