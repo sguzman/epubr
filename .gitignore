@@ -3,5 +3,6 @@
 .direnv/
 
 # nix
-result
+/result
 result-*
+*.json
