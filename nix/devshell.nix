@@ -4,76 +4,99 @@
   perSystem,
   ...
 }: let
+  # Single source of truth for tools in the shell
+  toolPkgs = with pkgs; [
+    fish
+    cargo
+    rustc
+    rustfmt
+    rust-analyzer
+    pkg-config
+    openssl
+    jq
+    statix
+    deadnix
+    alejandra
+  ];
+
+  # Render a clean "name version" line for each tool from Nix metadata.
+  # Falls back if `pname`/`version` are missing.
+  fmtPkg = p: let
+    hasPN = p ? pname;
+    pn =
+      if hasPN
+      then p.pname
+      else (p.name or "pkg");
+    ver =
+      if p ? version
+      then p.version
+      else "";
+    line =
+      if ver == ""
+      then "• ${pn}"
+      else "• ${pn} ${ver}";
+  in
+    "        " + line;
+
+  packagesSummary =
+    builtins.concatStringsSep "\n" (map fmtPkg toolPkgs);
+
+  # Banner script for fish; prints dynamic packages + the devshell menu
   banner = pkgs.writeText "epubr-banner.fish" ''
-    function fish_greeting
-      set_color -o cyan
-      echo "epubr devshell"
-      set_color normal
+        function fish_greeting
+          set_color -o cyan
+          echo "epubr devshell"
+          set_color normal
 
-      echo
-      set_color brwhite; echo "Toolchain:"; set_color normal
-      echo "  • rustc         = "(rustc --version ^/dev/null | cut -d' ' -f2-)
-      echo "  • cargo         = "(cargo --version ^/dev/null | cut -d' ' -f2-)
-      echo "  • rustfmt       = "(rustfmt --version ^/dev/null | cut -d' ' -f2-)
-      echo "  • rust-analyzer = "(rust-analyzer --version ^/dev/null)
-      echo "  • alejandra     = "(alejandra --version ^/dev/null)
-      echo "  • statix        = "(statix --version ^/dev/null)
-      echo "  • deadnix       = "(deadnix --version ^/dev/null)
+          # Where & who
+          set_color brwhite; echo ""; echo "Project:"; set_color normal
+          echo "  • PWD     → "(pwd)
+          if command -q git
+            echo "  • branch  → "(git rev-parse --abbrev-ref HEAD ^/dev/null)
+          end
 
-      echo
-      set_color brwhite; echo "Project shortcuts:"; set_color normal
-      echo "  • build    → nix build .#epubr"
-      echo "  • run      → cargo run --"
-      echo "  • fmt      → nix fmt"
-      echo "  • check    → cargo check --all-targets"
-      echo "  • test     → cargo test"
-      echo "  • lint:nix → statix check . && deadnix ."
-      echo "  • fix:nix  → statix fix ."
+          # Packages come from Nix metadata (auto-updates when you change toolPkgs)
+          set_color brwhite; echo ""; echo "Packages (from Nix):"; set_color normal
+    ${packagesSummary}
 
-      echo
-      set_color brwhite; echo "Menu (devshell commands):"; set_color normal
-      if type -q menu
-        menu
-      else
-        echo "  (menu unavailable)"
-      end
+          # Shortcuts = devshell commands; `menu` is dynamic
+          set_color brwhite; echo ""; echo "Menu (devshell commands):"; set_color normal
+          if type -q menu
+            menu
+          else
+            echo "  (menu unavailable)"
+          end
 
-      echo
-    end
+          echo ""
+          set_color brwhite; echo "Tip:"; set_color normal
+          echo "  • Run 'devhelp' anytime to reprint this banner."
+          echo ""
+        end
 
-    # Reprint the banner on demand
-    function devhelp
-      fish_greeting
-    end
+        # Reprint on demand
+        function devhelp
+          fish_greeting
+        end
   '';
 in
   perSystem.devshell.mkShell {
-    packages = with pkgs; [
-      fish
-      cargo
-      rustc
-      rustfmt
-      rust-analyzer
-      pkg-config
-      openssl
-      jq
-      statix
-      deadnix
-      alejandra
-    ];
+    # Use the same list for the actual devshell packages (stays in sync)
+    packages = toolPkgs;
 
-    # Print banner by sourcing the fish script *before* the prompt
+    # Auto-enter fish and source the banner script before the prompt appears
     devshell.interactive.fish.text = "exec ${pkgs.fish}/bin/fish -C 'source ${banner}'";
 
-    # Optional: keep devshell’s own MOTD quiet (fish prints our banner)
+    # Keep devshell’s own MOTD quiet; fish prints our banner
     motd = "";
 
+    # Commands (menu is auto-generated from here)
     commands = [
       {
         name = "devhelp";
         help = "reprint this banner/help";
         command = "${pkgs.fish}/bin/fish -c devhelp";
       }
+
       {
         name = "build";
         help = "nix build .#epubr";
@@ -81,12 +104,14 @@ in
       }
       {
         name = "run";
-        help = "cargo run -- …";
+        help = "cargo run --";
         command = "cargo run --";
       }
+
+      # formatters
       {
         name = "fmt";
-        help = "format Nix + Rust (Alejandra + rustfmt)";
+        help = "format Nix + Rust (treefmt: alejandra+rustfmt)";
         command = "nix fmt";
       }
       {
@@ -99,6 +124,7 @@ in
         help = "format Rust only (cargo fmt)";
         command = "cargo fmt --all";
       }
+
       {
         name = "check";
         help = "cargo check (all targets)";
@@ -109,6 +135,8 @@ in
         help = "cargo test";
         command = "cargo test";
       }
+
+      # linters
       {
         name = "lint:nix";
         help = "Nix lint: statix + deadnix";
