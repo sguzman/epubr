@@ -12,16 +12,14 @@ fn is_epub(entry: &DirEntry) -> bool {
 
 pub fn gather_epubs(root: &Path, follow_symlinks: bool) -> Result<Vec<PathBuf>> {
     let mut v = Vec::new();
-    let mut wd = WalkDir::new(root).into_iter();
+    let mut wd = WalkDir::new(root).follow_links(follow_symlinks).into_iter();
+
     while let Some(Ok(entry)) = wd.next() {
         if entry.file_type().is_dir() {
             continue;
         }
         if is_epub(&entry) {
             v.push(entry.into_path());
-        }
-        if !follow_symlinks && entry.path_is_symlink() {
-            // Skip
         }
     }
     Ok(v)

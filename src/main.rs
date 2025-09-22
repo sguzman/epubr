@@ -7,13 +7,14 @@ mod scan;
 mod util;
 
 use crate::args::Cli;
-use crate::db::{BooksDb, load_db, save_db};
-use crate::model::{BookEntry, Verbosity};
+use crate::db::{load_db, save_db};
+use crate::model::{BookEntry, BooksDb, Verbosity};
 use crate::scan::gather_epubs;
 use crate::util::{file_uri, now_iso8601};
 use anyhow::Result;
 use clap::Parser;
 use rayon::ThreadPoolBuilder;
+use rayon::prelude::*; // <-- for into_par_iter
 use std::path::PathBuf;
 use tracing::{debug, info, warn};
 
@@ -105,7 +106,7 @@ fn main() -> Result<()> {
             })
             .collect();
 
-        // Merge into DB (dataflow-y, pure-ish helpers)
+        // Merge into DB
         for mut e in new_entries {
             merge_entry(&mut db, &mut e);
         }
@@ -137,7 +138,6 @@ fn merge_entry(db: &mut BooksDb, new: &mut BookEntry) {
         match (&existing.xxhash, &new.xxhash) {
             (Some(old), Some(neu)) if old == neu => {
                 debug!("Unchanged: {}", new.full_path);
-                // Optionally refresh metadata or timestamps here
             }
             _ => {
                 existing.stale = true;
@@ -156,7 +156,6 @@ fn merge_entry(db: &mut BooksDb, new: &mut BookEntry) {
 /// - If file missing → set missing=true
 /// - If file present but hash differs → mark existing stale+missing and create a new entry
 fn check_and_update(db: &mut BooksDb) -> Result<()> {
-    // Collect changes, apply after to avoid borrow thrash
     let mut to_push: Vec<BookEntry> = Vec::new();
 
     for existing in db.books.iter_mut().filter(|b| !b.stale) {
@@ -168,14 +167,12 @@ fn check_and_update(db: &mut BooksDb) -> Result<()> {
             }
             continue;
         }
-        // Re-hash to detect content changes
         if let Ok(new_hash) = hash::xxh3_file(&path) {
             match (&existing.xxhash, new_hash) {
                 (Some(old), neu) if *old == neu => {
                     debug!("OK (unchanged): {}", existing.full_path);
                 }
                 (_, neu) => {
-                    // Mark old stale+missing and create a fresh entry
                     existing.stale = true;
                     existing.missing = true;
 
@@ -209,7 +206,6 @@ fn check_and_update(db: &mut BooksDb) -> Result<()> {
                 }
             }
         } else {
-            // Couldn’t read for some reason; mark missing
             existing.missing = true;
             warn!("Unreadable, marked missing: {}", existing.full_path);
         }

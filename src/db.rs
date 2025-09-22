@@ -1,7 +1,6 @@
 use crate::model::BooksDb;
 use anyhow::{Context, Result};
 use chrono::Utc;
-use serde_json::json;
 use std::fs;
 use std::path::Path;
 
