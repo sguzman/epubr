@@ -34,6 +34,6 @@
       prefix = "nix/";
       # Let Blueprint pick systems from the input set (or override explicitly)
       #systems = [ inputs.systems ];
-      systems = [ "86_64-linux" ];
+      systems = [ "x86_64-linux" ];
     };
 }
