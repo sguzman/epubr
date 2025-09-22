@@ -72,7 +72,7 @@ in
       {
         name = "devhelp";
         help = "reprint this banner/help";
-        command = "devhelp";
+        command = "${pkgs.fish}/bin/fish -c devhelp";
       }
       {
         name = "build";
