@@ -1,10 +1,11 @@
+# nix/devshell.nix
 {
   pkgs,
   perSystem,
   ...
 }:
 perSystem.devshell.mkShell {
-  # Tools available inside the shell
+  # Installed tools in the dev env
   packages = with pkgs; [
     fish
     cargo
@@ -16,10 +17,10 @@ perSystem.devshell.mkShell {
     jq
     statix
     deadnix
-    alejandra # so `nix fmt` has it in PATH too
+    alejandra
   ];
 
-  # Pretty banner with versions + command menu
+  # Nice banner + built-in menu
   motd = ''
     {bold}{106}epubr devshell{reset}
 
@@ -41,7 +42,7 @@ perSystem.devshell.mkShell {
       • lint:nix      → statix check . && deadnix .
       • fix:nix       → statix fix .
 
-    {bold}Menu (from devshell):{reset}
+    {bold}Menu (devshell commands):{reset}
     $(
       if type -p menu >/dev/null; then
         menu
@@ -49,9 +50,12 @@ perSystem.devshell.mkShell {
         echo "  (menu unavailable)"
       fi
     )
-  '';
+  ''; # devshell.motd supports {bold}/{106}/{reset} styling. :contentReference[oaicite:1]{index=1}
 
-  # Define the same commands so they appear in the devshell menu
+  # Auto-enter fish for interactive shells
+  devshell.interactive.fish.text = "exec ${pkgs.fish}/bin/fish"; # :contentReference[oaicite:2]{index=2}
+
+  # Commands (these appear in the menu)
   commands = [
     {
       name = "build";
@@ -65,7 +69,7 @@ perSystem.devshell.mkShell {
     }
     {
       name = "fmt";
-      help = "format Nix + Rust (treefmt/Alejandra+rustfmt)";
+      help = "format Nix + Rust (Alejandra + rustfmt)";
       command = "nix fmt";
     }
     {
@@ -85,11 +89,8 @@ perSystem.devshell.mkShell {
     }
     {
       name = "fix:nix";
-      help = "Auto-fix with statix (safe-ish)";
+      help = "Auto-fix with statix";
       command = "statix fix .";
     }
   ];
-
-  # Auto-enter fish
-  shellHook = ''exec ${pkgs.fish}/bin/fish'';
 }
