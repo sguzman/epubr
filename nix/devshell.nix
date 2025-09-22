@@ -44,6 +44,7 @@
           # Where & who
           set_color brwhite; echo; echo "Project:"; set_color normal
           echo "  • PWD     → "(pwd)
+          echo "  • time     → "(time)
           if command -q git
             if git rev-parse --is-inside-work-tree 2>/dev/null
               echo -n "  • branch  → "
