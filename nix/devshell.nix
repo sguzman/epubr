@@ -52,8 +52,49 @@ perSystem.devshell.mkShell {
     )
   ''; # devshell.motd supports {bold}/{106}/{reset} styling. :contentReference[oaicite:1]{index=1}
 
-  # Auto-enter fish for interactive shells
-  devshell.interactive.fish.text = "exec ${pkgs.fish}/bin/fish"; # :contentReference[oaicite:2]{index=2}
+  # inside perSystem.devshell.mkShell { ... }
+
+  # Auto-enter fish *and* define a rich banner inside fish
+  devshell.interactive.fish.text = ''
+    function fish_greeting
+      set_color -o cyan
+      echo "epubr devshell"
+      set_color normal
+
+      echo
+      set_color brwhite; echo "Toolchain:"; set_color normal
+      echo "  • rustc         = "(rustc --version ^/dev/null | cut -d' ' -f2-)
+      echo "  • cargo         = "(cargo --version ^/dev/null | cut -d' ' -f2-)
+      echo "  • rustfmt       = "(rustfmt --version ^/dev/null | cut -d' ' -f2-)
+      echo "  • rust-analyzer = "(rust-analyzer --version ^/dev/null)
+      echo "  • alejandra     = "(alejandra --version ^/dev/null)
+      echo "  • statix        = "(statix --version ^/dev/null)
+      echo "  • deadnix       = "(deadnix --version ^/dev/null)
+
+      echo
+      set_color brwhite; echo "Project shortcuts:"; set_color normal
+      echo "  • build    → nix build .#epubr"
+      echo "  • run      → cargo run --"
+      echo "  • fmt      → nix fmt"
+      echo "  • check    → cargo check --all-targets"
+      echo "  • test     → cargo test"
+      echo "  • lint:nix → statix check . && deadnix ."
+      echo "  • fix:nix  → statix fix ."
+
+      echo
+      set_color brwhite; echo "Menu (devshell commands):"; set_color normal
+      if type -q menu
+        menu
+      else
+        echo "  (menu unavailable)"
+      end
+
+      echo
+    end
+
+    # finally hop into fish
+    exec ${pkgs.fish}/bin/fish
+  '';
 
   # Commands (these appear in the menu)
   commands = [
