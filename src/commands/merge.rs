@@ -4,7 +4,7 @@ use tracing::info;
 
 use crate::commands::common::merge_entry;
 use crate::db::load_db;
-use crate::model::{BookEntry, BooksDb};
+use crate::model::BooksDb;
 use crate::util::now_iso8601;
 
 /// Merge another JSON DB (produced by this program) into the current DB.

@@ -56,6 +56,11 @@ pub fn run(cli: Cli) -> Result<()> {
             info!("Saved DB to {}", db_path.to_string_lossy());
         }
 
+        Commands::Count => {
+            count::cmd_count(&db)?;
+            // No save needed.
+        }
+
         Commands::Serve { backend } => {
             warn!(
                 "`serve` is not implemented yet (DNI). Backend arg = {:?}",
