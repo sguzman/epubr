@@ -5,17 +5,17 @@
   ...
 }: let
   toolPkgs = with pkgs; [
-    fish
+    alejandra
     cargo
+    deadnix
+    fish
+    jq
+    openssl
+    pkg-config
+    rust-analyzer
     rustc
     rustfmt
-    rust-analyzer
-    pkg-config
-    openssl
-    jq
     statix
-    deadnix
-    alejandra
     taplo
   ];
 
