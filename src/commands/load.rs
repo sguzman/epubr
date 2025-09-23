@@ -1,8 +1,9 @@
 use anyhow::Result;
 use rayon::prelude::*;
 use std::path::PathBuf;
-use tracing::{debug, info};
+use tracing::info;
 
+use crate::commands::common::merge_entry;
 use crate::hash;
 use crate::metadata;
 use crate::model::{BookEntry, BooksDb};
@@ -59,33 +60,4 @@ pub fn cmd_load(
     }
 
     Ok(())
-}
-
-/// Merge logic:
-/// - If an entry with the same full_path exists:
-///     - If hash unchanged (or missing both), do nothing.
-///     - If hash changed, mark old as stale+missing, insert new as fresh.
-/// - If path doesn't exist, insert new.
-fn merge_entry(db: &mut BooksDb, new: &mut BookEntry) {
-    if let Some(existing) = db
-        .books
-        .iter_mut()
-        .find(|b| b.full_path == new.full_path && !b.stale)
-    {
-        match (&existing.xxhash, &new.xxhash) {
-            (Some(old), Some(neu)) if old == neu => {
-                debug!("Unchanged: {}", new.full_path);
-            }
-            _ => {
-                existing.stale = true;
-                existing.missing = true;
-                db.books.push(new.clone());
-                // NOTE: per your request, "Inserted ..." is debug; updated stays info.
-                tracing::info!("Updated (stale→new): {}", new.full_path);
-            }
-        }
-    } else {
-        db.books.push(new.clone());
-        tracing::debug!("Inserted: {}", new.full_path); // downgraded to debug
-    }
 }

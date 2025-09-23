@@ -1,5 +1,7 @@
 pub mod check;
+pub mod common;
 pub mod load;
+pub mod merge;
 pub mod prune;
 
 use anyhow::Result;
@@ -10,11 +12,6 @@ use crate::args::{Cli, Commands};
 use crate::db::{load_db, save_db};
 use crate::model::BooksDb;
 
-/// Entrypoint for all subcommands:
-/// - sets thread pool (if requested)
-/// - loads DB once
-/// - dispatches to subcommand
-/// - saves DB if subcommand mutated it
 pub fn run(cli: Cli) -> Result<()> {
     // Threading
     if cli.threads > 0 {
@@ -30,7 +27,6 @@ pub fn run(cli: Cli) -> Result<()> {
     let mut db: BooksDb = load_db(&db_path).unwrap_or_default();
     info!("Loaded DB with {} record(s)", db.books.len());
 
-    // Dispatch
     match cli.cmd {
         Commands::Load {
             root,
@@ -49,6 +45,12 @@ pub fn run(cli: Cli) -> Result<()> {
 
         Commands::Prune => {
             prune::cmd_prune(&mut db)?;
+            save_db(&db_path, &db)?;
+            info!("Saved DB to {}", db_path.to_string_lossy());
+        }
+
+        Commands::Merge { other } => {
+            merge::cmd_merge(&mut db, other)?;
             save_db(&db_path, &db)?;
             info!("Saved DB to {}", db_path.to_string_lossy());
         }

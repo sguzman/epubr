@@ -42,6 +42,13 @@ pub enum Commands {
     /// Remove stale entries from the DB
     Prune,
 
+    /// Merge another books.json into the current DB
+    Merge {
+        /// Path to the other DB JSON file produced by this program
+        #[arg(value_name = "OTHER_DB")]
+        other: PathBuf,
+    },
+
     /// Serve a DB (DNI / stub)
     Serve {
         /// Optional backend name (e.g., meilisearch, surrealdb, ...)
