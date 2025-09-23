@@ -6,7 +6,7 @@ mod model;
 mod scan;
 mod util;
 
-use crate::args::Cli;
+use crate::args::{Cli, Commands};
 use crate::db::{load_db, save_db};
 use crate::model::{BookEntry, BooksDb, Verbosity};
 use crate::scan::gather_epubs;
@@ -14,7 +14,7 @@ use crate::util::{file_uri, now_iso8601};
 use anyhow::Result;
 use clap::Parser;
 use rayon::ThreadPoolBuilder;
-use rayon::prelude::*; // <-- for into_par_iter
+use rayon::prelude::*;
 use std::path::PathBuf;
 use tracing::{debug, info, warn};
 
@@ -43,84 +43,112 @@ fn main() -> Result<()> {
         info!("Using {} thread(s)", cli.threads);
     }
 
-    let root = cli.root.clone();
     let db_path = cli.db.clone();
-
     let mut db: BooksDb = load_db(&db_path).unwrap_or_default();
     info!("Loaded DB with {} record(s)", db.books.len());
 
-    if cli.check {
-        check_and_update(&mut db)?;
-    }
+    match cli.cmd {
+        Commands::Load {
+            root,
+            follow_symlinks,
+        } => cmd_load(&mut db, &db_path, root, follow_symlinks)?,
 
-    if cli.prune {
-        let before = db.books.len();
-        db.books.retain(|b| !b.stale);
-        info!(
-            "Pruned {} stale record(s)",
-            before.saturating_sub(db.books.len())
-        );
-    }
+        Commands::Check => cmd_check(&mut db, &db_path)?,
 
-    // Main scan (if user provided a root directory)
-    if let Some(root_dir) = root {
-        let epubs = gather_epubs(&root_dir, cli.follow_symlinks)?;
-        info!("Found {} epub file(s)", epubs.len());
+        Commands::Prune => cmd_prune(&mut db, &db_path)?,
 
-        let found_at = now_iso8601();
+        Commands::Serve { backend } => {
+            warn!(
+                "`serve` is not implemented yet (DNI). Backend arg = {:?}",
+                backend
+            );
+        }
 
-        let new_entries: Vec<BookEntry> = epubs
-            .into_par_iter()
-            .map(|path| {
-                let full_path = path.canonicalize().unwrap_or(path.clone());
-                let filename = full_path
-                    .file_name()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "unknown.epub".to_string());
-                let uri = file_uri(&full_path);
-                let protocol = "file".to_string();
+        Commands::Query => {
+            warn!("`query` is not implemented yet (DNI).");
+        }
 
-                // Hash file
-                let xxhash = hash::xxh3_file(&full_path).ok();
-
-                // Metadata (best-effort)
-                let meta = metadata::extract_epub_metadata(&full_path).unwrap_or_default();
-
-                BookEntry {
-                    full_path: full_path.to_string_lossy().to_string(),
-                    uri_path: uri,
-                    protocol,
-                    filename,
-                    xxhash,
-                    date_found: found_at.clone(),
-                    missing: false,
-                    stale: false,
-                    title: meta.title,
-                    author: meta.author,
-                    description: meta.description,
-                    chapters: meta.chapters,
-                    publish_date: meta.publish_date,
-                    publisher: meta.publisher,
-                    other_metadata: meta.other_metadata,
-                }
-            })
-            .collect();
-
-        // Merge into DB
-        for mut e in new_entries {
-            merge_entry(&mut db, &mut e);
+        Commands::Stow => {
+            warn!("`stow` is not implemented yet (DNI). Will zpaq ultra-compress epubs.");
         }
     }
 
-    // Stow (stub)
-    if cli.stow {
-        warn!("--stow is not implemented yet (will zpaq ultra-compress to a local archive)");
+    Ok(())
+}
+
+fn cmd_load(
+    db: &mut BooksDb,
+    db_path: &PathBuf,
+    root_dir: PathBuf,
+    follow_symlinks: bool,
+) -> Result<()> {
+    let epubs = gather_epubs(&root_dir, follow_symlinks)?;
+    info!("Found {} epub file(s)", epubs.len());
+
+    let found_at = now_iso8601();
+
+    let new_entries: Vec<BookEntry> = epubs
+        .into_par_iter()
+        .map(|path| {
+            let full_path = path.canonicalize().unwrap_or(path.clone());
+            let filename = full_path
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| "unknown.epub".to_string());
+            let uri = file_uri(&full_path);
+            let protocol = "file".to_string();
+
+            // Hash file
+            let xxhash = hash::xxh3_file(&full_path).ok();
+
+            // Metadata (best-effort)
+            let meta = metadata::extract_epub_metadata(&full_path).unwrap_or_default();
+
+            BookEntry {
+                full_path: full_path.to_string_lossy().to_string(),
+                uri_path: uri,
+                protocol,
+                filename,
+                xxhash,
+                date_found: found_at.clone(),
+                missing: false,
+                stale: false,
+                title: meta.title,
+                author: meta.author,
+                description: meta.description,
+                chapters: meta.chapters,
+                publish_date: meta.publish_date,
+                publisher: meta.publisher,
+                other_metadata: meta.other_metadata,
+            }
+        })
+        .collect();
+
+    for mut e in new_entries {
+        merge_entry(db, &mut e);
     }
 
-    // Save
-    save_db(&db_path, &db)?;
+    save_db(db_path, db)?;
     info!("Saved DB to {}", db_path.to_string_lossy());
+    Ok(())
+}
 
+fn cmd_check(db: &mut BooksDb, db_path: &PathBuf) -> Result<()> {
+    check_and_update(db)?;
+    save_db(db_path, db)?;
+    info!("Saved DB to {}", db_path.to_string_lossy());
+    Ok(())
+}
+
+fn cmd_prune(db: &mut BooksDb, db_path: &PathBuf) -> Result<()> {
+    let before = db.books.len();
+    db.books.retain(|b| !b.stale);
+    info!(
+        "Pruned {} stale record(s)",
+        before.saturating_sub(db.books.len())
+    );
+    save_db(db_path, db)?;
+    info!("Saved DB to {}", db_path.to_string_lossy());
     Ok(())
 }
 
@@ -170,7 +198,7 @@ fn check_and_update(db: &mut BooksDb) -> Result<()> {
         if let Ok(new_hash) = hash::xxh3_file(&path) {
             match (&existing.xxhash, new_hash) {
                 (Some(old), neu) if *old == neu => {
-                    debug!("OK (unchanged): {}", existing.full_path);
+                    // unchanged
                 }
                 (_, neu) => {
                     existing.stale = true;
