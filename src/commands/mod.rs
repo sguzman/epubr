@@ -1,5 +1,6 @@
 pub mod check;
 pub mod common;
+pub mod count;
 pub mod load;
 pub mod merge;
 pub mod prune;

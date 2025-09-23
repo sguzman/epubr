@@ -49,6 +49,9 @@ pub enum Commands {
         other: PathBuf,
     },
 
+    /// Count the number of entries in the current DB
+    Count,
+
     /// Serve a DB (DNI / stub)
     Serve {
         /// Optional backend name (e.g., meilisearch, surrealdb, ...)
