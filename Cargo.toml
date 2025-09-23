@@ -14,7 +14,7 @@ serde = { version = "1.0.225", features = ["derive"] }     # latest 1.x :content
 serde_json = "1.0.145"             # latest 1.x :contentReference[oaicite:8]{index=8}
 clap = { version = "4.5.48", features = ["derive"] }       # latest 4.x :contentReference[oaicite:9]{index=9}
 tracing = "0.1.41"                  # latest 0.1.x :contentReference[oaicite:10]{index=10}
-tracing-subscriber = { version = "0.3.20", features = ["env-filter"] } # latest 0.3.x :contentReference[oaicite:11]{index=11}
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "time"] }
 url = "2.5.7"                       # latest 2.x :contentReference[oaicite:12]{index=12}
 percent-encoding = "2.3.2"          # latest 2.x :contentReference[oaicite:13]{index=13}
 zip = { version = "5.1.1", default-features = false, features = ["deflate"] } # latest 5.x :contentReference[oaicite:14]{index=14}
