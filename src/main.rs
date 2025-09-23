@@ -176,7 +176,7 @@ fn merge_entry(db: &mut BooksDb, new: &mut BookEntry) {
         }
     } else {
         db.books.push(new.clone());
-        info!("Inserted: {}", new.full_path);
+        debug!("Inserted: {}", new.full_path);
     }
 }
 
