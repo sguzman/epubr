@@ -16,6 +16,7 @@
     statix
     deadnix
     alejandra
+    taplo
   ];
 
   fmtPkg = p: let
