@@ -2,6 +2,10 @@
 name = "epubr"
 version = "0.1.0"
 edition = "2024"
+description = "Tools for scanning and managing EPUB files"
+license-file = "LICENSE"
+repository = "https://github.com/sguzman/epubr"
+
 
 [package.metadata.release]
 # Versioning behavior
