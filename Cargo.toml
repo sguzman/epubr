@@ -25,7 +25,7 @@ push = false                       # keep it local; you push manually
 sign-tag = false                   # change to true if you sign
 
 # Hooks: build the changelog for the new version
-pre-release-hook = [
+post-release-hook = [
   "sh", "-c",
   "git-cliff --tag v{{version}} --prepend CHANGELOG.md"
 ]
