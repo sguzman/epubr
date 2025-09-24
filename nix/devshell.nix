@@ -7,8 +7,10 @@
   toolPkgs = with pkgs; [
     alejandra
     cargo
+    cargo-release
     deadnix
     fish
+    git-cliff
     jq
     openssl
     pkg-config
