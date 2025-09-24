@@ -6,7 +6,7 @@ fn is_epub(entry: &DirEntry) -> bool {
     entry
         .path()
         .extension()
-        .map(|e| e.eq_ignore_ascii_case("epub"))
+        .map(|e| e.eq_ignore_ascii_case("epub") || e.eq_ignore_ascii_case("pdf"))
         .unwrap_or(false)
 }
 

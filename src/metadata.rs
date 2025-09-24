@@ -73,3 +73,23 @@ pub fn extract_epub_metadata(path: &Path) -> Result<EpubMeta> {
         other_metadata: other,
     })
 }
+
+/// Minimal PDF metadata extractor (placeholder):
+/// For now, we derive a title from the filename and leave other fields empty.
+/// This keeps the JSON shape uniform with EPUB entries.
+pub fn extract_pdf_metadata(path: &std::path::Path) -> anyhow::Result<crate::model::EpubMeta> {
+    use std::collections::BTreeMap;
+    let title = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_string());
+    Ok(crate::model::EpubMeta {
+        title,
+        author: None,
+        description: None,
+        chapters: Vec::new(),
+        publish_date: None,
+        publisher: None,
+        other_metadata: BTreeMap::new(),
+    })
+}

@@ -5,7 +5,7 @@ use tracing::{info, warn};
 
 use crate::hash;
 use crate::metadata;
-use crate::model::{BookEntry, BooksDb};
+use crate::model::{BookEntry, BooksDb, FileFormat};
 use crate::util::{file_uri, now_iso8601};
 
 pub fn cmd_check(db: &mut BooksDb) -> Result<()> {
@@ -13,58 +13,44 @@ pub fn cmd_check(db: &mut BooksDb) -> Result<()> {
 }
 
 fn check_and_update(db: &mut BooksDb) -> Result<()> {
-    let mut to_push: Vec<BookEntry> = Vec::new();
+    let mut to_push = Vec::new();
 
-    for existing in db.books.iter_mut().filter(|b| !b.stale) {
+    for existing in db.books.iter_mut().filter(|e| !e.stale) {
         let path = PathBuf::from(&existing.full_path);
-        if !path.exists() {
-            if !existing.missing {
-                existing.missing = true;
-                info!("Marked missing: {}", existing.full_path);
-            }
-            continue;
-        }
-        if let Ok(new_hash) = hash::xxh3_file(&path) {
-            match (&existing.xxhash, new_hash) {
-                (Some(old), neu) if *old == neu => {
-                    // unchanged
-                }
-                (_, neu) => {
-                    existing.stale = true;
-                    existing.missing = true;
-
-                    let meta = metadata::extract_epub_metadata(&path).unwrap_or_default();
-                    let found_at = now_iso8601();
-                    let uri = file_uri(&path);
-                    let filename = path
-                        .file_name()
-                        .map(|s| s.to_string_lossy().to_string())
-                        .unwrap_or_else(|| "unknown.epub".to_string());
-
-                    // NEW: compute size for fresh record
-                    let size_bytes = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-
-                    let fresh = BookEntry {
-                        full_path: existing.full_path.clone(),
-                        uri_path: uri,
-                        protocol: "file".to_string(),
-                        filename,
-                        size_bytes, // NEW
-                        xxhash: Some(neu),
-                        date_found: found_at,
-                        missing: false,
-                        stale: false,
-                        title: meta.title,
-                        author: meta.author,
-                        description: meta.description,
-                        chapters: meta.chapters,
-                        publish_date: meta.publish_date,
-                        publisher: meta.publisher,
-                        other_metadata: meta.other_metadata,
-                    };
-                    to_push.push(fresh);
-                    info!("Changed → new record: {}", existing.full_path);
-                }
+        if let Ok(md) = fs::metadata(&path) {
+            let size = md.len();
+            let new_hash = hash::xxh3_file(&path).ok();
+            if existing.xxhash != new_hash {
+                let meta = match existing.format {
+                    FileFormat::Epub => metadata::extract_epub_metadata(&path).unwrap_or_default(),
+                    FileFormat::Pdf => metadata::extract_pdf_metadata(&path).unwrap_or_default(),
+                };
+                let fresh = BookEntry {
+                    full_path: existing.full_path.clone(),
+                    uri_path: file_uri(&path),
+                    protocol: existing.protocol.clone(),
+                    filename: existing.filename.clone(),
+                    xxhash: new_hash,
+                    date_found: now_iso8601(),
+                    missing: false,
+                    stale: false,
+                    size_bytes: size,
+                    format: existing.format,
+                    title: meta.title,
+                    author: meta.author,
+                    description: meta.description,
+                    chapters: meta.chapters,
+                    publish_date: meta.publish_date,
+                    publisher: meta.publisher,
+                    other_metadata: meta.other_metadata,
+                };
+                existing.stale = true;
+                existing.missing = false;
+                to_push.push(fresh);
+                info!("Changed → new record: {}", existing.full_path);
+            } else {
+                // update size if needed
+                existing.size_bytes = size;
             }
         } else {
             existing.missing = true;

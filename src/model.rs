@@ -14,6 +14,26 @@ pub enum Verbosity {
     Debug,
 }
 
+/// File format of the indexed item.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum FileFormat {
+    #[default]
+    Epub,
+    Pdf,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct EpubMeta {
+    pub title: Option<String>,
+    pub author: Option<String>,
+    pub description: Option<String>,
+    pub chapters: Vec<String>,
+    pub publish_date: Option<String>,
+    pub publisher: Option<String>,
+    pub other_metadata: BTreeMap<String, String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct BookEntry {
     pub full_path: String,
@@ -25,22 +45,15 @@ pub struct BookEntry {
     pub missing: bool,
     pub stale: bool,
 
-    // NEW: exact file size (bytes). Default=0 for old DBs.
+    // exact file size (bytes). Default=0 for old DBs.
     #[serde(default)]
     pub size_bytes: u64,
 
-    // Metadata
-    pub title: Option<String>,
-    pub author: Option<String>,
-    pub description: Option<String>,
-    pub chapters: Vec<String>,
-    pub publish_date: Option<String>,
-    pub publisher: Option<String>,
-    pub other_metadata: BTreeMap<String, String>,
-}
+    // New: epub vs pdf. Defaults to "epub" for old DBs.
+    #[serde(default)]
+    pub format: FileFormat,
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct EpubMeta {
+    // Metadata
     pub title: Option<String>,
     pub author: Option<String>,
     pub description: Option<String>,
