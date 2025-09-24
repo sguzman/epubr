@@ -1,5 +1,6 @@
 use anyhow::Result;
 use rayon::prelude::*;
+use std::fs;
 use std::path::PathBuf;
 use tracing::info;
 
