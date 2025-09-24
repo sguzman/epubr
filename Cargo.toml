@@ -8,6 +8,7 @@ edition = "2024"
 shared-version = true              # bump all crates together
 dependent-version = "upgrade"      # update internal deps to the new version
 
+
 # Safety / policy
 allow-branch = ["main"]            # only release from main (adjust as needed)
 
