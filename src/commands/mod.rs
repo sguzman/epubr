@@ -4,6 +4,7 @@ pub mod count;
 pub mod load;
 pub mod merge;
 pub mod prune;
+pub mod rehash;
 
 use anyhow::Result;
 use rayon::ThreadPoolBuilder;

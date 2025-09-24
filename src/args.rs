@@ -40,6 +40,14 @@ pub enum Commands {
         no_hash: bool,
     },
 
+    /// Compute and fill missing xxhash values for entries in the current DB.
+    /// Only entries with xxhash = null and files that currently exist are hashed.
+    Rehash {
+        /// Recompute hashes even if a hash is already present (off by default).
+        #[arg(long)]
+        force: bool,
+    },
+
     /// Check DB entries against the filesystem (mark missing/changed)
     Check,
 
