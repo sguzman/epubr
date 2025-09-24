@@ -16,6 +16,7 @@
     rustc
     rustfmt
     statix
+    stylua
     taplo
   ];
 
