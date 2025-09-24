@@ -29,13 +29,17 @@ sign-tag = false                   # change to true if you sign
 pre-release-hook = [
   "sh", "-c",
   '''
+  set -e
   prev="$(git describe --tags --abbrev=0 2>/dev/null || true)"
   if [ -n "$prev" ]; then
     git-cliff "$prev..HEAD" --tag "v{{version}}" --prepend CHANGELOG.md
   else
-    # first release: include whole history
     git-cliff --tag "v{{version}}" --prepend CHANGELOG.md
   fi
+
+  # Include the changelog in the existing release commit so the tree is clean:
+  git add CHANGELOG.md
+  git commit --amend --no-edit
   '''
 ]
 
