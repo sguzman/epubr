@@ -1,6 +1,6 @@
 [package]
 name = "epubr"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Tools for scanning and managing EPUB files"
 license-file = "LICENSE"
