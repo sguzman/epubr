@@ -31,7 +31,7 @@ pre-release-hook = [
   '''
   prev="$(git describe --tags --abbrev=0 2>/dev/null || true)"
   if [ -n "$prev" ]; then
-    git-cliff --range "$prev..HEAD" --tag "v{{version}}" --prepend CHANGELOG.md
+    git-cliff "$prev..HEAD" --tag "v{{version}}" --prepend CHANGELOG.md
   else
     # first release: include whole history
     git-cliff --tag "v{{version}}" --prepend CHANGELOG.md
