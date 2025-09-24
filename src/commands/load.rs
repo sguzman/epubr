@@ -15,6 +15,7 @@ pub fn cmd_load(
     _db_path: &PathBuf,
     root_dir: PathBuf,
     follow_symlinks: bool,
+    no_hash: bool,
 ) -> Result<()> {
     let epubs = gather_epubs(&root_dir, follow_symlinks)?;
     info!("Found {} epub file(s)", epubs.len());
@@ -25,6 +26,9 @@ pub fn cmd_load(
         .into_par_iter()
         .map(|path| {
             let full_path = path.canonicalize().unwrap_or(path.clone());
+            // File size (bytes)
+            let size_bytes = fs::metadata(&full_path).map(|m| m.len()).unwrap_or(0);
+
             let filename = full_path
                 .file_name()
                 .map(|s| s.to_string_lossy().to_string())
@@ -32,7 +36,12 @@ pub fn cmd_load(
             let uri = file_uri(&full_path);
             let protocol = "file".to_string();
 
-            let xxhash = hash::xxh3_file(&full_path).ok();
+            // Conditional hash
+            let xxhash = if no_hash {
+                None
+            } else {
+                hash::xxh3_file(&full_path).ok()
+            };
             let meta = metadata::extract_epub_metadata(&full_path).unwrap_or_default();
 
             BookEntry {
@@ -40,6 +49,7 @@ pub fn cmd_load(
                 uri_path: uri,
                 protocol,
                 filename,
+                size_bytes,
                 xxhash,
                 date_found: found_at.clone(),
                 missing: false,

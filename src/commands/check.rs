@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::fs;
 use std::path::PathBuf;
 use tracing::{info, warn};
 
@@ -11,9 +12,6 @@ pub fn cmd_check(db: &mut BooksDb) -> Result<()> {
     check_and_update(db)
 }
 
-/// --check pass:
-/// - If file missing → set missing=true
-/// - If file present but hash differs → mark existing stale+missing and create a new entry
 fn check_and_update(db: &mut BooksDb) -> Result<()> {
     let mut to_push: Vec<BookEntry> = Vec::new();
 
@@ -43,11 +41,15 @@ fn check_and_update(db: &mut BooksDb) -> Result<()> {
                         .map(|s| s.to_string_lossy().to_string())
                         .unwrap_or_else(|| "unknown.epub".to_string());
 
+                    // NEW: compute size for fresh record
+                    let size_bytes = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+
                     let fresh = BookEntry {
                         full_path: existing.full_path.clone(),
                         uri_path: uri,
                         protocol: "file".to_string(),
                         filename,
+                        size_bytes, // NEW
                         xxhash: Some(neu),
                         date_found: found_at,
                         missing: false,

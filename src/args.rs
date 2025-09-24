@@ -34,6 +34,10 @@ pub enum Commands {
         /// Follow symlinks when walking directories
         #[arg(long)]
         follow_symlinks: bool,
+
+        /// Do not compute xxhash; set xxhash field to null
+        #[arg(long)]
+        no_hash: bool,
     },
 
     /// Check DB entries against the filesystem (mark missing/changed)

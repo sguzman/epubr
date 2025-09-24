@@ -25,6 +25,10 @@ pub struct BookEntry {
     pub missing: bool,
     pub stale: bool,
 
+    // NEW: exact file size (bytes). Default=0 for old DBs.
+    #[serde(default)]
+    pub size_bytes: u64,
+
     // Metadata
     pub title: Option<String>,
     pub author: Option<String>,

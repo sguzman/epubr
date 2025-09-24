@@ -32,8 +32,9 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Load {
             root,
             follow_symlinks,
+            no_hash,
         } => {
-            load::cmd_load(&mut db, &db_path, root, follow_symlinks)?;
+            load::cmd_load(&mut db, &db_path, root, follow_symlinks, no_hash)?;
             save_db(&db_path, &db)?;
             info!("Saved DB to {}", db_path.to_string_lossy());
         }
