@@ -52,6 +52,12 @@ pub fn run(cli: Cli) -> Result<()> {
             info!("Saved DB to {}", db_path.to_string_lossy());
         }
 
+        Commands::Rehash { force } => {
+            rehash::cmd_rehash(&mut db, force)?;
+            save_db(&db_path, &db)?;
+            info!("Saved DB to {}", db_path.to_string_lossy());
+        }
+
         Commands::Merge { other } => {
             merge::cmd_merge(&mut db, other)?;
             save_db(&db_path, &db)?;
