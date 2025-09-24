@@ -1,7 +1,7 @@
 [changelog]
 header = "# Changelog\n\n"
 body = """
-## {{ version | default(value="Unreleased") }} - {{ now() | date(format="%Y-%m-%d") }}
+## {{ version | default(value="Unreleased") }} - {{ now() | date(format="%Y-%m-%d") }}\n
 """
 
 footer = "\n"
