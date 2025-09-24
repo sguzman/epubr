@@ -24,10 +24,19 @@ consolidate-commits = true
 push = false                       # keep it local; you push manually
 sign-tag = false                   # change to true if you sign
 
-# Hooks: build the changelog for the new version
-post-release-hook = [
+# Run BEFORE the tag exists; compute range from previous tag to HEAD,
+# tell git-cliff to label the section as the new tag.
+pre-release-hook = [
   "sh", "-c",
-  "git-cliff --tag v{{version}} --prepend CHANGELOG.md"
+  '''
+  prev="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+  if [ -n "$prev" ]; then
+    git-cliff --range "$prev..HEAD" --tag "v{{version}}" --prepend CHANGELOG.md
+  else
+    # first release: include whole history
+    git-cliff --tag "v{{version}}" --prepend CHANGELOG.md
+  fi
+  '''
 ]
 
 [dependencies]
