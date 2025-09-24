@@ -1,8 +1,9 @@
 [changelog]
 header = "# Changelog\n\n"
-body   = """
-## {{ version }} - {{ now | date("%Y-%m-%d") }}
+body = """
+## {{ version | default(value="Unreleased") }} - {{ now() | date(format="%Y-%m-%d") }}
 """
+
 footer = "\n"
 
 [git]
