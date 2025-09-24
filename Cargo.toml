@@ -1,7 +1,29 @@
 [package]
 name = "epubr"
-version = "0.3.3"
+version = "0.1.0"
 edition = "2024"
+
+[package.metadata.release]
+# Versioning behavior
+shared-version = true              # bump all crates together
+dependent-version = "upgrade"      # update internal deps to the new version
+
+# Safety / policy
+allow-branch = ["main"]            # only release from main (adjust as needed)
+
+# Tagging / committing
+tag-name = "v{{version}}"
+tag-message = "chore(release): v{{version}}"
+pre-release-commit-message = "chore(release): {{version}}"
+consolidate-commits = true
+push = false                       # keep it local; you push manually
+sign-tag = false                   # change to true if you sign
+
+# Hooks: build the changelog for the new version
+pre-release-hook = [
+  "sh", "-c",
+  "git-cliff --tag v{{version}} --prepend CHANGELOG.md"
+]
 
 [dependencies]
 anyhow = "1.0.100" # latest 1.x on docs.rs :contentReference[oaicite:1]{index=1}
